@@ -77,6 +77,12 @@ the dependency environment before running build-time helpers.
 `build-local.sh` automatically re-executes under Rosetta and selects Apple's
 classic linker compatibility mode when the host is Apple Silicon.
 
+Every build must initialize a disposable fresh prefix and run `cmd /c ver`
+before packaging. A compiler-successful engine that cannot load its Windows
+runtime is rejected and no artifact is emitted. CrossOver 24 additionally
+includes a compatibility backport that keeps delay-load IAT pointers in a
+writable `.didat` section when building with modern Binutils.
+
 Managed output is stored under `local-builds/` by default. It includes the
 engine, runtime manifest, checksum, reference record, work tree, and a marker
 understood by `wineforge engine prune-artifacts`. See
