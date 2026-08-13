@@ -23,7 +23,8 @@ Every build:
 2. verifies its pinned SHA-256 before extraction;
 3. rejects unsafe archive paths;
 4. verifies and applies the manifest's version-scoped source patches;
-5. builds on a platform-specific GitHub-hosted runner;
+5. builds Wine's install dependency graph on a platform-specific GitHub-hosted
+   runner, excluding test-only executables from runtime builds;
 6. records the runner image, tools, configuration, source and patch digests,
    and artifact digest in `build-info.json`;
 7. emits an SPDX JSON SBOM and SHA-256 checksum;
