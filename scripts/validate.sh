@@ -5,7 +5,7 @@ IFS=$'\n\t'
 repo_dir=$(CDPATH= cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)
 failures=0
 
-for command_name in bash jq; do
+for command_name in bash jq shasum; do
   if ! command -v "$command_name" >/dev/null 2>&1; then
     printf 'missing required command: %s\n' "$command_name" >&2
     exit 1
@@ -31,7 +31,8 @@ if ! grep -q '^#define WINDEBUG_WHAT_HAPPENED_MESSAGE' \
 fi
 
 for manifest in "$repo_dir"/engines/crossover-*.json; do
-  if ! jq -e '
+  manifest_version=$(jq -er '.source.version' "$manifest")
+  if ! jq -e --arg version "$manifest_version" '
     .schema_version == 1 and
     (.id | test("^[a-z0-9][a-z0-9.-]+$")) and
     (.source.version | test("^[0-9]+\\.[0-9]+\\.[0-9]+$")) and
@@ -40,12 +41,32 @@ for manifest in "$repo_dir"/engines/crossover-*.json; do
     (.source.source_date_epoch | type == "number") and
     (.build.source_subdirectory == "sources/wine") and
     (.build.targets == ["linux-x86_64", "macos-x86_64"]) and
+    (.build.patches | type == "array") and
+    (all(.build.patches[];
+      (.path | test("^patches/" + $version + "/[a-z0-9][a-z0-9.-]+\\.patch$")) and
+      (.sha256 | test("^[a-f0-9]{64}$")) and
+      (.provenance | type == "string" and length > 0))) and
     (.redistribution.status as $status |
       (["review_required", "approved", "prohibited"] | index($status)) != null)
   ' "$manifest" >/dev/null; then
     printf 'invalid manifest: %s\n' "$manifest" >&2
     failures=$((failures + 1))
   fi
+
+  while IFS= read -r patch_spec; do
+    patch_path=$(jq -er '.path' <<<"$patch_spec")
+    expected_patch_sha256=$(jq -er '.sha256' <<<"$patch_spec")
+    if [[ ! -f "$repo_dir/$patch_path" || -L "$repo_dir/$patch_path" ]]; then
+      printf 'unsafe or missing patch: %s\n' "$patch_path" >&2
+      failures=$((failures + 1))
+      continue
+    fi
+    actual_patch_sha256=$(shasum -a 256 "$repo_dir/$patch_path" | awk '{print $1}')
+    if [[ "$actual_patch_sha256" != "$expected_patch_sha256" ]]; then
+      printf 'patch digest mismatch: %s\n' "$patch_path" >&2
+      failures=$((failures + 1))
+    fi
+  done < <(jq -c '.build.patches[]' "$manifest")
 done
 
 if rg -n -i '(private application|customer name|personal path)' "$repo_dir" \

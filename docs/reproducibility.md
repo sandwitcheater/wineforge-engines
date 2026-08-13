@@ -16,4 +16,5 @@ To claim reproducibility:
 
 The packaging script already normalizes the tar archive. Compilers, linkers,
 Mach-O metadata, and source-generated files may still embed nondeterminism.
-
+Source patches are version-scoped, SHA-256-pinned in the engine manifest, and
+recorded in each artifact's build evidence.

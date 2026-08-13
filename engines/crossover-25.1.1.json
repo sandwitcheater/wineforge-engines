@@ -15,7 +15,8 @@
   },
   "build": {
     "source_subdirectory": "sources/wine",
-    "targets": ["linux-x86_64", "macos-x86_64"]
+    "targets": ["linux-x86_64", "macos-x86_64"],
+    "patches": []
   },
   "redistribution": {
     "status": "review_required",

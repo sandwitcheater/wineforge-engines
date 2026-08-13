@@ -39,7 +39,7 @@ if [[ ${DRY_RUN:-0} == 1 ]]; then
   exit 0
 fi
 
-for command_name in file jq make python3 shasum; do
+for command_name in file jq make patch python3 shasum; do
   command -v "$command_name" >/dev/null 2>&1 || {
     printf 'missing required command: %s\n' "$command_name" >&2
     exit 69
@@ -59,6 +59,31 @@ build_dir="$work_dir/build"
 stage_dir="$work_dir/stage"
 mkdir -p -- "$build_dir" "$stage_dir"
 "$repo_dir/scripts/prepare-source.sh" "$source_dir"
+
+patch_evidence='[]'
+while IFS= read -r patch_spec; do
+  patch_path=$(jq -er '.path' <<<"$patch_spec")
+  expected_patch_sha256=$(jq -er '.sha256' <<<"$patch_spec")
+  case "$patch_path" in
+    "patches/$version/"*.patch) ;;
+    *) printf 'unsafe patch path: %s\n' "$patch_path" >&2; exit 65 ;;
+  esac
+  patch_file="$repo_dir/$patch_path"
+  if [[ ! -f "$patch_file" || -L "$patch_file" ]]; then
+    printf 'unsafe or missing patch: %s\n' "$patch_path" >&2
+    exit 65
+  fi
+  actual_patch_sha256=$(shasum -a 256 "$patch_file" | awk '{print $1}')
+  if [[ "$actual_patch_sha256" != "$expected_patch_sha256" ]]; then
+    printf 'patch digest mismatch for %s\n' "$patch_path" >&2
+    exit 65
+  fi
+  patch --batch --forward --directory="$source_dir" -p1 --input="$patch_file"
+  patch_evidence=$(jq -c \
+    --arg path "$patch_path" \
+    --arg sha256 "$actual_patch_sha256" \
+    '. + [{path: $path, sha256: $sha256}]' <<<"$patch_evidence")
+done < <(jq -c '.build.patches[]' "$manifest")
 
 if [[ "$target" == macos-x86_64 ]]; then
   export CC='clang -arch x86_64'
@@ -104,12 +129,14 @@ jq -n \
   --arg runner_image "${ImageOS:-unknown}-${ImageVersion:-unknown}" \
   --arg binary_description "$binary_description" \
   --arg configure "$(printf '%q ' "${configure_args[@]}")" \
+  --argjson patches "$patch_evidence" \
   --arg cc "$($compiler_command --version 2>/dev/null | head -1 || true)" \
   --arg make "$(make --version | head -1)" \
   '{schema_version: 1, version: $version, target: $target,
     source: {url: $source_url, sha256: $source_sha256},
     builder: {runner_image: $runner_image, compiler: $cc, make: $make},
-    configure: $configure, executable: $binary_description}' \
+    configure: $configure, source_patches: $patches,
+    executable: $binary_description}' \
   > "$stage_dir/share/wineforge/build-info.json"
 
 artifact="$dist_dir/wineforge-engine-$version-$target.tar.gz"
