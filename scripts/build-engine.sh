@@ -58,6 +58,7 @@ source_dir="$work_dir/source/$source_subdirectory"
 build_dir="$work_dir/build"
 stage_dir="$work_dir/stage"
 mkdir -p -- "$build_dir" "$stage_dir"
+"$repo_dir/scripts/prepare-source.sh" "$source_dir"
 
 if [[ "$target" == macos-x86_64 ]]; then
   export CC='clang -arch x86_64'
