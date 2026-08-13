@@ -94,7 +94,7 @@ if [[ "$target" == macos-x86_64 ]]; then
     llvm_prefix=$(brew --prefix llvm)
     export AR="$llvm_prefix/bin/llvm-ar"
     export RANLIB="$llvm_prefix/bin/llvm-ranlib"
-    export PATH="$(brew --prefix bison)/bin:$PATH"
+    export PATH="$llvm_prefix/bin:$(brew --prefix bison)/bin:$PATH"
     export PKG_CONFIG_PATH="$brew_prefix/lib/pkgconfig:$brew_prefix/share/pkgconfig:${PKG_CONFIG_PATH:-}"
     export CPPFLAGS="-I$brew_prefix/include ${CPPFLAGS:-}"
     export LDFLAGS="-L$brew_prefix/lib ${LDFLAGS:-}"
