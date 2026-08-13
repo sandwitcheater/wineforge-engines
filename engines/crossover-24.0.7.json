@@ -26,6 +26,11 @@
         "path": "patches/24.0.7/0002-winemac-load-obsolete-window-image-api.patch",
         "sha256": "6383423fed51bdfb6ef9e374c960af9acb4f9a0ddc6096ea55cd7731e2fa91c1",
         "provenance": "Focused macOS 15 SDK compatibility backport derived from the SHA-256-pinned official CrossOver 25.1.1 source archive."
+      },
+      {
+        "path": "patches/24.0.7/0003-winhlp32-remove-unused-bool-field.patch",
+        "sha256": "4b7eb5bef5ebcc4aa426c9fa508719fa35fe4b14f47c7d2d9c1df7b75a71c629",
+        "provenance": "One-line modern MinGW compatibility backport derived from the SHA-256-pinned official CrossOver 25.1.1 source archive."
       }
     ]
   },
