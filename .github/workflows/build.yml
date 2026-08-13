@@ -77,7 +77,7 @@ jobs:
       - name: Generate SPDX SBOM
         uses: anchore/sbom-action@f8bdd1d8ac5e901a77a92f111440fdb1b593736b # v0.20.6
         with:
-          path: dist/wineforge-engine-${{ inputs.version }}-${{ matrix.target }}.tar.gz
+          path: work/${{ inputs.version }}-${{ matrix.target }}/stage
           format: spdx-json
           output-file: dist/wineforge-engine-${{ inputs.version }}-${{ matrix.target }}.spdx.json
           upload-artifact: false
