@@ -40,6 +40,12 @@
         "sha256": "fdfaa170370b1d87fcbe944f8c2f95d0b44dbb788fab9839ee1da86792cbfcdb",
         "provenance": "Minimal PE-compiler ABI flag fix derived from the corresponding configure logic in the SHA-256-pinned official CrossOver 25.1.1 source archive.",
         "targets": ["macos-x86_64"]
+      },
+      {
+        "path": "patches/24.0.7/0005-winebuild-place-delay-iat-in-didat.patch",
+        "sha256": "cbd6ef100ed5ea1f4b1be205a28d4139f48424fa9d04228a5474c71a5f466e22",
+        "provenance": "Compatibility backport for modern Binutils PE delay-import section semantics; delay IAT pointers must remain writable.",
+        "targets": ["macos-x86_64"]
       }
     ]
   },

@@ -139,6 +139,16 @@ case "$target:$binary_description" in
   *) printf 'unexpected runtime architecture: %s\n' "$binary_description" >&2; exit 70 ;;
 esac
 
+if [[ "$target" == macos-x86_64 && -n ${WINEFORGE_DEPS_PREFIX:-} ]]; then
+  runtime_library_dir="$stage_dir/lib/wine/x86_64-unix"
+  mkdir -p -- "$runtime_library_dir"
+  find "$dependency_prefix/lib" -maxdepth 1 \( -type f -o -type l \) -name '*.dylib' \
+    -exec cp -RP {} "$runtime_library_dir/" \;
+fi
+
+wine_relative=${wine_binary#"$stage_dir"/}
+"$repo_dir/scripts/smoke-engine.sh" "$stage_dir" "$wine_relative"
+
 mkdir -p -- "$stage_dir/share/wineforge/licenses"
 find "$source_dir" -maxdepth 2 -type f \
   \( -iname 'copying*' -o -iname 'license*' -o -iname 'authors*' \) \
@@ -170,7 +180,6 @@ artifact="$dist_dir/wineforge-engine-$version-$target.tar.gz"
 python3 "$repo_dir/scripts/package.py" "$stage_dir" "$artifact" --mtime "$source_date_epoch"
 artifact_name=$(basename "$artifact")
 artifact_sha256=$(shasum -a 256 "$artifact" | awk '{print $1}')
-wine_relative=${wine_binary#"$stage_dir"/}
 case "$target" in
   linux-x86_64)
     runtime_platform='linux-x86-64'

@@ -1,0 +1,30 @@
+diff --git a/tools/winebuild/import.c b/tools/winebuild/import.c
+--- a/tools/winebuild/import.c
++++ b/tools/winebuild/import.c
+@@ -1632,7 +1632,7 @@ static void build_windows_import_lib( const char *lib_name, DLLSPEC *spec, struc
+         output( "\t.long 0\n" );                         /* UnloadInformationTableRVA */
+         output( "\t.long 0\n" );                         /* TimeDateStamp */
+ 
+-        output( "\n\t.section .idata$5\n" );
++        output( "\n\t.section .didat$5\n" );
+         output( "\t%s 0\n", get_asm_ptr_keyword() );     /* FirstThunk tail */
+         output( ".L__wine_import_addrs:\n" );
+ 
+@@ -1668,7 +1668,7 @@ static void build_windows_import_lib( const char *lib_name, DLLSPEC *spec, struc
+ 
+     output( "\n\t.section .idata$4\n" );
+     output( "\t%s 0\n", get_asm_ptr_keyword() );         /* OriginalFirstThunk tail */
+-    output( "\n\t.section .idata$5\n" );
++    output( "\n\t.section %s$5\n", is_delay ? ".didat" : ".idata" );
+     output( "\t%s 0\n", get_asm_ptr_keyword() );         /* FirstThunk tail */
+     output( "\n\t.section .idata$7\n" );
+     output( "%s\n", asm_globl( import_name ) );
+@@ -1765,7 +1765,7 @@ static void build_windows_import_lib( const char *lib_name, DLLSPEC *spec, struc
+             output( "\n\t.section .idata$4\n" );
+             output_thunk_rva( by_name ? -1 : odp->ordinal, ".L__wine_import_name" );
+ 
+-            output( "\n\t.section .idata$5\n" );
++            output( "\n\t.section %s$5\n", is_delay ? ".didat" : ".idata" );
+             output( "%s\n", asm_globl( imp_name ) );
+             if (is_delay)
+                 output( "\t%s .L__wine_delay_import\n", get_asm_ptr_keyword() );
