@@ -89,6 +89,8 @@ done < <(jq -c --arg target "$target" \
 if [[ "$target" == macos-x86_64 ]]; then
   export CC='clang -arch x86_64'
   export CXX='clang++ -arch x86_64'
+  export AR="$(xcrun --find llvm-ar)"
+  export RANLIB="$(xcrun --find llvm-ranlib)"
   if command -v brew >/dev/null 2>&1; then
     brew_prefix=$(brew --prefix)
     export PATH="$(brew --prefix bison)/bin:$PATH"
