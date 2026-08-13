@@ -1,0 +1,42 @@
+From: Wineforge engine builders
+Subject: [PATCH] configure: Avoid Unix ms_abi flags with a PE compiler
+
+When MinGW is available, PE objects use that compiler and do not need Apple's
+clang to accept -mabi=ms. Keep the flag inside the no-PE-compiler branch.
+
+---
+ configure    | 2 +-
+ configure.ac | 2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/configure.ac b/configure.ac
+index 1111111..2222222 100644
+--- a/configure.ac
++++ b/configure.ac
+@@ -1995,8 +1995,9 @@ int a(int b, ...) { __builtin_ms_va_list list; __builtin_ms_va_start(list,b); }]
+                        [ac_cv_mabi_ms=yes],[ac_cv_mabi_ms=no])
+                     CFLAGS=$saved_CFLAGS])
+                test $ac_cv_mabi_ms = yes || AC_MSG_ERROR([The compiler doesn't support -mabi=ms. Use gcc instead of clang, or install mingw-w64.])
++               MSVCRTFLAGS="$MSVCRTFLAGS -mabi=ms"
+            fi
+-           MSVCRTFLAGS="$MSVCRTFLAGS -mabi=ms" ;;
++           ;;
+       esac ;;
+     arm)
+       WINE_TRY_CFLAGS([-Wincompatible-function-pointer-types],[EXTRACFLAGS="$EXTRACFLAGS -Wno-error=incompatible-function-pointer-types"]) ;;
+diff --git a/configure b/configure
+index 3333333..4444444 100755
+--- a/configure
++++ b/configure
+@@ -20022,7 +20022,8 @@ fi
+ printf "%s\n" "$ac_cv_mabi_ms" >&6; }
+                test $ac_cv_mabi_ms = yes || as_fn_error $? "The compiler doesn't support -mabi=ms. Use gcc instead of clang, or install mingw-w64." "$LINENO" 5
++               MSVCRTFLAGS="$MSVCRTFLAGS -mabi=ms"
+            fi
+-           MSVCRTFLAGS="$MSVCRTFLAGS -mabi=ms" ;;
++           ;;
+       esac ;;
+     arm)
+       { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether the compiler supports -Wincompatible-function-pointer-types" >&5
+-- 
+2.50.1
