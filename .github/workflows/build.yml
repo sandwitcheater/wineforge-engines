@@ -1,0 +1,149 @@
+name: Build engines
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: CrossOver source version
+        required: true
+        type: choice
+        options:
+          - 24.0.7
+          - 25.1.1
+      publish_release:
+        description: Publish a GitHub Release (requires approved redistribution)
+        required: true
+        default: false
+        type: boolean
+
+permissions:
+  contents: read
+
+concurrency:
+  group: engine-${{ inputs.version }}-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: ${{ matrix.target }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - target: linux-x86_64
+            runner: ubuntu-24.04
+          - target: macos-x86_64
+            runner: macos-15-intel
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 360
+    permissions:
+      contents: read
+      id-token: write
+      attestations: write
+      artifact-metadata: write
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+
+      - name: Install Linux build dependencies
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes --no-install-recommends \
+            bison build-essential flex gcc-multilib g++-multilib \
+            jq libfreetype-dev libgnutls28-dev libx11-dev \
+            libxext-dev libxrender-dev libxrandr-dev libxi-dev \
+            libxcursor-dev libxfixes-dev pkg-config python3
+          dpkg-query --show > dependency-versions.txt
+
+      - name: Install macOS build dependencies
+        if: runner.os == 'macOS'
+        run: |
+          brew update-reset
+          brew install bison freetype gnutls jq mingw-w64 pkg-config
+          brew list --versions > dependency-versions.txt
+
+      - name: Build and package runtime
+        env:
+          WINEFORGE_JOBS: "3"
+        run: ./scripts/build-engine.sh "${{ inputs.version }}" "${{ matrix.target }}"
+
+      - name: Add dependency inventory to build evidence
+        run: |
+          cp dependency-versions.txt dist/dependency-versions-${{ matrix.target }}.txt
+
+      - name: Generate SPDX SBOM
+        uses: anchore/sbom-action@f8bdd1d8ac5e901a77a92f111440fdb1b593736b # v0.20.6
+        with:
+          path: dist/wineforge-engine-${{ inputs.version }}-${{ matrix.target }}.tar.gz
+          format: spdx-json
+          output-file: dist/wineforge-engine-${{ inputs.version }}-${{ matrix.target }}.spdx.json
+          upload-artifact: false
+
+      - name: Attest runtime provenance
+        uses: actions/attest@59d89421af93a897026c735860bf21b6eb4f7b26 # v4.1.0
+        with:
+          subject-path: dist/wineforge-engine-${{ inputs.version }}-${{ matrix.target }}.tar.gz
+
+      - name: Attest runtime SBOM
+        uses: actions/attest@59d89421af93a897026c735860bf21b6eb4f7b26 # v4.1.0
+        with:
+          subject-path: dist/wineforge-engine-${{ inputs.version }}-${{ matrix.target }}.tar.gz
+          sbom-path: dist/wineforge-engine-${{ inputs.version }}-${{ matrix.target }}.spdx.json
+
+      - name: Upload build evidence
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: engine-${{ inputs.version }}-${{ matrix.target }}
+          path: |
+            dist/wineforge-engine-${{ inputs.version }}-${{ matrix.target }}.tar.gz
+            dist/wineforge-engine-${{ inputs.version }}-${{ matrix.target }}.tar.gz.sha256
+            dist/wineforge-engine-${{ inputs.version }}-${{ matrix.target }}.spdx.json
+            dist/wineforge-engine-${{ inputs.version }}-${{ matrix.target }}.tar.gz.runtime.json
+            dist/dependency-versions-${{ matrix.target }}.txt
+          if-no-files-found: error
+          retention-days: 14
+
+  release:
+    if: inputs.publish_release
+    needs: build
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    environment: release
+    permissions:
+      contents: write
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+
+      - name: Enforce redistribution approval
+        run: ./scripts/check-redistribution.sh "${{ inputs.version }}"
+
+      - name: Download build artifacts
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          pattern: engine-${{ inputs.version }}-*
+          path: release-assets
+          merge-multiple: true
+
+      - name: Publish immutable release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: engine-${{ inputs.version }}
+        run: |
+          if gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
+            printf 'release tag already exists; releases are immutable: %s\n' "$RELEASE_TAG" >&2
+            exit 1
+          fi
+          if gh api "repos/${GITHUB_REPOSITORY}/git/ref/tags/${RELEASE_TAG}" >/dev/null 2>&1; then
+            printf 'git tag already exists; refusing ambiguous publication: %s\n' "$RELEASE_TAG" >&2
+            exit 1
+          fi
+          gh release create "$RELEASE_TAG" release-assets/* \
+            --generate-notes \
+            --title "Wineforge engine ${{ inputs.version }}" \
+            --target "$GITHUB_SHA"

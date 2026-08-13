@@ -1,0 +1,25 @@
+{
+  "$schema": "./schema.json",
+  "schema_version": 1,
+  "id": "crossover-24.0.7",
+  "upstream": {
+    "name": "CodeWeavers CrossOver sources",
+    "homepage": "https://media.codeweavers.com/pub/crossover/source/"
+  },
+  "source": {
+    "version": "24.0.7",
+    "url": "https://media.codeweavers.com/pub/crossover/source/crossover-sources-24.0.7.tar.gz",
+    "sha256": "56749e926df9f0437dbcea259cf0bff6657a43871af50182887fe15a84fc2e4e",
+    "sha256_provenance": "Independently calculated from the official HTTPS archive on 2026-08-13; no publisher checksum sidecar was available.",
+    "source_date_epoch": 1738068240
+  },
+  "build": {
+    "source_subdirectory": "sources/wine",
+    "targets": ["linux-x86_64", "macos-x86_64"]
+  },
+  "redistribution": {
+    "status": "review_required",
+    "reason": "Component-level licence and corresponding-source obligations must be reviewed before public binary release."
+  }
+}
+

@@ -1,0 +1,59 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://wineforge.example/schemas/engine-source-v1.json",
+  "title": "Wineforge engine source",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "id", "upstream", "source", "build", "redistribution"],
+  "properties": {
+    "schema_version": { "const": 1 },
+    "id": { "type": "string", "pattern": "^[a-z0-9][a-z0-9.-]+$" },
+    "upstream": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "homepage"],
+      "properties": {
+        "name": { "type": "string" },
+        "homepage": { "type": "string", "format": "uri", "pattern": "^https://" }
+      }
+    },
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["version", "url", "sha256", "sha256_provenance", "source_date_epoch"],
+      "properties": {
+        "version": { "type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$" },
+        "url": { "type": "string", "format": "uri", "pattern": "^https://media\\.codeweavers\\.com/" },
+        "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+        "sha256_provenance": { "type": "string" },
+        "source_date_epoch": { "type": "integer", "minimum": 1 }
+      }
+    },
+    "build": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["source_subdirectory", "targets"],
+      "properties": {
+        "source_subdirectory": { "const": "sources/wine" },
+        "targets": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": { "enum": ["linux-x86_64", "macos-x86_64"] },
+          "minItems": 2
+        }
+      }
+    },
+    "redistribution": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "reason"],
+      "properties": {
+        "status": { "enum": ["review_required", "approved", "prohibited"] },
+        "reason": { "type": "string", "minLength": 1 },
+        "reviewer": { "type": "string" },
+        "evidence": { "type": "array", "items": { "type": "string", "format": "uri" } }
+      }
+    }
+  }
+}
+
