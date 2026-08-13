@@ -21,6 +21,11 @@ case "$target" in
   *) printf 'unsupported target: %s\n' "$target" >&2; exit 64 ;;
 esac
 
+# CrossOver 24 sources use `bool` as a C identifier. GCC 15 defaults to C23,
+# where `bool` is a keyword, so keep PE compilation on the source-compatible
+# language version. Callers may override this for newer source trees.
+export CROSSCFLAGS=${CROSSCFLAGS:-'-g -O2 -std=gnu17'}
+
 [[ -f "$manifest" ]] || { printf 'unsupported version: %s\n' "$version" >&2; exit 64; }
 
 configure_args=(
@@ -33,7 +38,8 @@ if [[ "$target" == macos-x86_64 ]]; then
 fi
 
 if [[ ${DRY_RUN:-0} == 1 ]]; then
-  printf 'version=%s\ntarget=%s\nconfigure=' "$version" "$target"
+  printf 'version=%s\ntarget=%s\ncross_cflags=%s\nconfigure=' \
+    "$version" "$target" "$CROSSCFLAGS"
   printf ' %q' "${configure_args[@]}"
   printf '\n'
   exit 0

@@ -94,6 +94,14 @@ for manifest in "$repo_dir"/engines/crossover-*.json; do
   done < <(jq -c '.build.patches[]' "$manifest")
 done
 
+dry_run=$(
+  DRY_RUN=1 "$repo_dir/scripts/build-engine.sh" 24.0.7 macos-x86_64
+)
+if ! grep -q '^cross_cflags=-g -O2 -std=gnu17$' <<<"$dry_run"; then
+  printf 'source-compatible MinGW C language version is not configured\n' >&2
+  failures=$((failures + 1))
+fi
+
 if rg -n -i '(private application|customer name|personal path)' "$repo_dir" \
   --glob '!scripts/validate.sh' >/dev/null; then
   printf 'repository-neutrality placeholder found in tracked content\n' >&2
