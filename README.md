@@ -70,7 +70,12 @@ and macOS uses the native host toolchain:
 
 Apple Silicon hosts may supply an isolated x86_64 library prefix with
 `WINEFORGE_DEPS_PREFIX`. Host build tools still come from Homebrew, while
-headers, libraries, and pkg-config metadata are resolved from that prefix.
+dependency flags are resolved from that prefix's pkg-config metadata. This
+keeps third-party library search paths out of Wine's freestanding preloader.
+Homebrew `make` and `bash` are required for this mode so macOS does not strip
+the dependency environment before running build-time helpers.
+`build-local.sh` automatically re-executes under Rosetta and selects Apple's
+classic linker compatibility mode when the host is Apple Silicon.
 
 Managed output is stored under `local-builds/` by default. It includes the
 engine, runtime manifest, checksum, reference record, work tree, and a marker

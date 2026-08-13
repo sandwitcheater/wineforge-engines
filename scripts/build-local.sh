@@ -8,6 +8,7 @@ usage() {
 }
 
 if (( $# < 2 )); then usage; exit 64; fi
+invocation_arguments=("$@")
 version=$1
 target=$2
 shift 2
@@ -40,6 +41,13 @@ case "$target" in
     [[ "$runtime" == auto ]] && runtime=native
     [[ "$runtime" == native ]] || { printf 'macOS engines require a native macOS build\n' >&2; exit 64; }
     [[ $(uname -s) == Darwin ]] || { printf 'macOS engines require a macOS host\n' >&2; exit 69; }
+    if [[ $(uname -m) == arm64 && ${WINEFORGE_ROSETTA_REEXEC:-0} != 1 ]]; then
+      command -v arch >/dev/null 2>&1 || { printf 'arch is required for Rosetta builds\n' >&2; exit 69; }
+      exec arch -x86_64 env \
+        WINEFORGE_ROSETTA_REEXEC=1 \
+        LDFLAGS="${LDFLAGS:+$LDFLAGS }-Wl,-ld_classic" \
+        "$0" "${invocation_arguments[@]}"
+    fi
     ;;
   *) printf 'unsupported target: %s\n' "$target" >&2; exit 64 ;;
 esac
