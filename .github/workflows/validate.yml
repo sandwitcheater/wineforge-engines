@@ -11,7 +11,7 @@ permissions:
 jobs:
   validate:
     runs-on: ubuntu-24.04
-    timeout-minutes: 10
+    timeout-minutes: 20
     steps:
       - name: Check out repository
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
@@ -30,3 +30,5 @@ jobs:
           ./scripts/build-engine.sh 25.1.1 linux-x86_64
           ./scripts/build-engine.sh 25.1.1 macos-x86_64
 
+      - name: Validate pinned Linux builder image
+        run: docker build --platform linux/amd64 --file containers/linux/Containerfile .

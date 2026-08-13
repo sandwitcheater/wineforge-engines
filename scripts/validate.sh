@@ -5,12 +5,18 @@ IFS=$'\n\t'
 repo_dir=$(CDPATH= cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)
 failures=0
 
-for command_name in bash jq shasum; do
+for command_name in bash jq python3 shasum; do
   if ! command -v "$command_name" >/dev/null 2>&1; then
     printf 'missing required command: %s\n' "$command_name" >&2
     exit 1
   fi
 done
+
+if ! grep -Eq '^FROM ubuntu@sha256:[a-f0-9]{64}$' \
+  "$repo_dir/containers/linux/Containerfile"; then
+  printf 'Linux builder base image is not digest-pinned\n' >&2
+  failures=$((failures + 1))
+fi
 
 while IFS= read -r script; do
   bash -n "$script"
@@ -19,6 +25,23 @@ done < <(find "$repo_dir/scripts" -type f -name '*.sh' -print | LC_ALL=C sort)
 preparation_test=$(mktemp -d "${TMPDIR:-/tmp}/wineforge-prepare-test.XXXXXX")
 cleanup() { rm -rf -- "$preparation_test"; }
 trap cleanup EXIT HUP INT TERM
+
+reference_test="$preparation_test/reference"
+mkdir -p -- "$reference_test/stage/bin" "$reference_test/stage/share/wineforge"
+printf 'synthetic executable\n' > "$reference_test/stage/bin/wine"
+chmod 755 "$reference_test/stage/bin/wine"
+printf 'synthetic archive\n' > "$reference_test/engine.tar.gz"
+jq -n '{schema_version: 1, version: "1.0.0", target: "linux-x86_64",
+  source: {url: "https://example.invalid/source", sha256: ("0" * 64)},
+  builder: {runner_image: "test", compiler: "cc", make: "make"},
+  configure: "--prefix=/", source_patches: [], executable: "ELF"}' \
+  > "$reference_test/stage/share/wineforge/build-info.json"
+"$repo_dir/scripts/generate-reference.py" \
+  "$reference_test/stage" "$reference_test/engine.tar.gz" \
+  "$reference_test/local.json"
+"$repo_dir/scripts/compare-reference.py" \
+  "$reference_test/local.json" "$reference_test/local.json" --require-exact
+
 mkdir -- "$preparation_test/wine"
 "$repo_dir/scripts/prepare-source.sh" "$preparation_test/wine"
 "$repo_dir/scripts/prepare-source.sh" "$preparation_test/wine"

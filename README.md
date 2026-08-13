@@ -28,7 +28,9 @@ Every build:
 6. records the runner image, tools, configuration, source and patch digests,
    and artifact digest in `build-info.json`;
 7. emits an SPDX JSON SBOM and SHA-256 checksum;
-8. uploads GitHub artifact attestations for both the runtime and SBOM.
+8. uploads GitHub artifact attestations for both the runtime and SBOM; and
+9. uploads a reference record and SBOM, while keeping compiled engine upload
+   disabled by default.
 
 Each artifact also includes a `*.runtime.json` manifest for Wineforge. The
 manifest contains the archive digest, target platform, translation mode and the
@@ -53,10 +55,23 @@ Normal development validation is intentionally lightweight:
 DRY_RUN=1 ./scripts/build-engine.sh 25.1.1 linux-x86_64
 ```
 
-Do not run release-sized builds on a development machine. Use **Actions → Build
-engines → Run workflow**. The workflow can build one version for both platforms.
-Release publication is separately gated by the protected `release` environment
-and the manifest's `redistribution.status` field.
+Use **Actions → Build engines → Run workflow** for shared verification. The
+workflow can build one version for both platforms without uploading compiled
+engines. Release publication is separately gated by the protected `release`
+environment and the manifest's `redistribution.status` field.
+
+For an independent local build, Linux uses a digest-pinned Podman/Docker image
+and macOS uses the native host toolchain:
+
+```sh
+./scripts/build-local.sh 24.0.7 linux-x86_64 --runtime podman
+./scripts/build-local.sh 24.0.7 macos-x86_64
+```
+
+Managed output is stored under `local-builds/` by default. It includes the
+engine, runtime manifest, checksum, reference record, work tree, and a marker
+understood by `wineforge engine prune-artifacts`. See
+[docs/reproducibility.md](docs/reproducibility.md) for CI comparison.
 
 ## CI dependency policy
 

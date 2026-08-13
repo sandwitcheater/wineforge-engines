@@ -15,6 +15,11 @@ on:
         required: true
         default: false
         type: boolean
+      upload_engine_artifacts:
+        description: Upload compiled engine archives (normally keep disabled)
+        required: true
+        default: false
+        type: boolean
 
 permissions:
   contents: read
@@ -95,16 +100,25 @@ jobs:
           subject-path: dist/wineforge-engine-${{ inputs.version }}-${{ matrix.target }}.tar.gz
           sbom-path: dist/wineforge-engine-${{ inputs.version }}-${{ matrix.target }}.spdx.json
 
-      - name: Upload build evidence
+      - name: Upload reference evidence
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
-          name: engine-${{ inputs.version }}-${{ matrix.target }}
+          name: engine-reference-${{ inputs.version }}-${{ matrix.target }}
           path: |
-            dist/wineforge-engine-${{ inputs.version }}-${{ matrix.target }}.tar.gz
             dist/wineforge-engine-${{ inputs.version }}-${{ matrix.target }}.tar.gz.sha256
             dist/wineforge-engine-${{ inputs.version }}-${{ matrix.target }}.spdx.json
             dist/wineforge-engine-${{ inputs.version }}-${{ matrix.target }}.tar.gz.runtime.json
+            dist/wineforge-engine-${{ inputs.version }}-${{ matrix.target }}.reference.json
             dist/dependency-versions-${{ matrix.target }}.txt
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Upload compiled engine
+        if: inputs.upload_engine_artifacts || inputs.publish_release
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: engine-binary-${{ inputs.version }}-${{ matrix.target }}
+          path: dist/wineforge-engine-${{ inputs.version }}-${{ matrix.target }}.tar.gz
           if-no-files-found: error
           retention-days: 14
 
@@ -128,7 +142,7 @@ jobs:
       - name: Download build artifacts
         uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
         with:
-          pattern: engine-${{ inputs.version }}-*
+          pattern: engine-*-${{ inputs.version }}-*
           path: release-assets
           merge-multiple: true
 

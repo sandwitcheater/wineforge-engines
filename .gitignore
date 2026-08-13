@@ -1,5 +1,6 @@
 dist/
 work/
+local-builds/
 __pycache__/
 *.pyc
 *.tar.gz
