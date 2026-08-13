@@ -68,6 +68,10 @@ and macOS uses the native host toolchain:
 ./scripts/build-local.sh 24.0.7 macos-x86_64
 ```
 
+Apple Silicon hosts may supply an isolated x86_64 library prefix with
+`WINEFORGE_DEPS_PREFIX`. Host build tools still come from Homebrew, while
+headers, libraries, and pkg-config metadata are resolved from that prefix.
+
 Managed output is stored under `local-builds/` by default. It includes the
 engine, runtime manifest, checksum, reference record, work tree, and a marker
 understood by `wineforge engine prune-artifacts`. See

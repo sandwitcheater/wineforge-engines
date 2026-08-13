@@ -97,13 +97,18 @@ if [[ "$target" == macos-x86_64 ]]; then
   export CXX='clang++ -arch x86_64'
   if command -v brew >/dev/null 2>&1; then
     brew_prefix=$(brew --prefix)
+    dependency_prefix=${WINEFORGE_DEPS_PREFIX:-$brew_prefix}
+    [[ -d "$dependency_prefix/include" && -d "$dependency_prefix/lib" ]] || {
+      printf 'invalid macOS dependency prefix: %s\n' "$dependency_prefix" >&2
+      exit 69
+    }
     llvm_prefix=$(brew --prefix llvm)
     export AR="$llvm_prefix/bin/llvm-ar"
     export RANLIB="$llvm_prefix/bin/llvm-ranlib"
     export PATH="$llvm_prefix/bin:$(brew --prefix bison)/bin:$PATH"
-    export PKG_CONFIG_PATH="$brew_prefix/lib/pkgconfig:$brew_prefix/share/pkgconfig:${PKG_CONFIG_PATH:-}"
-    export CPPFLAGS="-I$brew_prefix/include ${CPPFLAGS:-}"
-    export LDFLAGS="-L$brew_prefix/lib ${LDFLAGS:-}"
+    export PKG_CONFIG_PATH="$dependency_prefix/lib/pkgconfig:$dependency_prefix/share/pkgconfig:${PKG_CONFIG_PATH:-}"
+    export CPPFLAGS="-I$dependency_prefix/include ${CPPFLAGS:-}"
+    export LDFLAGS="-L$dependency_prefix/lib ${LDFLAGS:-}"
   fi
 fi
 
