@@ -30,13 +30,16 @@ export CROSSCFLAGS=${CROSSCFLAGS:-'-g -O2 -std=gnu17'}
 
 configure_args=(
   --prefix=/
-  --enable-win64
   "--host=$expected_host"
 )
 make_command=make
 make_arguments=(-j "${WINEFORGE_JOBS:-2}")
 if [[ "$target" == macos-x86_64 ]]; then
-  configure_args+=(--without-alsa --without-cups --without-dbus --without-oss --without-pulse --without-sane --without-wayland --without-x)
+  # Modern WoW64 keeps the Unix runtime 64-bit while producing both i386 and
+  # x86_64 Windows modules for PE32 compatibility on current macOS.
+  configure_args+=(--enable-archs=i386,x86_64 --without-alsa --without-cups --without-dbus --without-oss --without-pulse --without-sane --without-wayland --without-x)
+else
+  configure_args+=(--enable-win64)
 fi
 
 if [[ ${DRY_RUN:-0} == 1 ]]; then
@@ -147,7 +150,11 @@ if [[ "$target" == macos-x86_64 && -n ${WINEFORGE_DEPS_PREFIX:-} ]]; then
 fi
 
 wine_relative=${wine_binary#"$stage_dir"/}
-"$repo_dir/scripts/smoke-engine.sh" "$stage_dir" "$wine_relative"
+if [[ "$target" == macos-x86_64 ]]; then
+  "$repo_dir/scripts/smoke-engine.sh" "$stage_dir" "$wine_relative" --require-wow64
+else
+  "$repo_dir/scripts/smoke-engine.sh" "$stage_dir" "$wine_relative"
+fi
 
 mkdir -p -- "$stage_dir/share/wineforge/licenses"
 find "$source_dir" -maxdepth 2 -type f \
