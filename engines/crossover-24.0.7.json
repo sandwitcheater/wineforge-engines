@@ -21,6 +21,11 @@
         "path": "patches/24.0.7/0001-ntdll-separate-syscall-return-entry.patch",
         "sha256": "4e8b090705932af77e083fbccfdb06ab554dea970daf4714efde5b5a27d936b8",
         "provenance": "Minimal backport derived by comparing the SHA-256-pinned official CrossOver 24.0.7 and 25.1.1 source archives."
+      },
+      {
+        "path": "patches/24.0.7/0002-winemac-load-obsolete-window-image-api.patch",
+        "sha256": "6383423fed51bdfb6ef9e374c960af9acb4f9a0ddc6096ea55cd7731e2fa91c1",
+        "provenance": "Focused macOS 15 SDK compatibility backport derived from the SHA-256-pinned official CrossOver 25.1.1 source archive."
       }
     ]
   },
