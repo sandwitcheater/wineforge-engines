@@ -1,0 +1,34 @@
+From: Wineforge engine builders
+Subject: [PATCH] ntdll: Separate the syscall return entry point
+
+Apple clang rejects a global label inside another function's CFI region.
+CrossOver 25.1.1 carries the equivalent structural change; backport the
+minimal portion needed by 24.0.7.
+
+---
+ dlls/ntdll/unix/signal_x86_64.c | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/dlls/ntdll/unix/signal_x86_64.c b/dlls/ntdll/unix/signal_x86_64.c
+index 1111111..2222222 100644
+--- a/dlls/ntdll/unix/signal_x86_64.c
++++ b/dlls/ntdll/unix/signal_x86_64.c
+@@ -2934,13 +2934,13 @@ __ASM_GLOBAL_FUNC( __wine_syscall_dispatcher,
+                    __ASM_CFI("\t.cfi_restore_state\n")
+                    "5:\tmovl $0xc000000d,%eax\n\t" /* STATUS_INVALID_PARAMETER */
+                    "movq %rsp,%rcx\n\t"
+-                   "jmp " __ASM_LOCAL_LABEL("__wine_syscall_dispatcher_return") "\n\t"
+-                   ".globl " __ASM_NAME("__wine_syscall_dispatcher_return") "\n"
+-                   __ASM_NAME("__wine_syscall_dispatcher_return") ":\n\t"
++                   "jmp " __ASM_LOCAL_LABEL("__wine_syscall_dispatcher_return") )
++
++__ASM_GLOBAL_FUNC( __wine_syscall_dispatcher_return,
+                    "movq %rdi,%rcx\n\t"
+                    "movl 0xb0(%rcx),%r14d\n\t"     /* frame->syscall_flags */
+                    "movq %rsi,%rax\n\t"
+                    "jmp " __ASM_LOCAL_LABEL("__wine_syscall_dispatcher_return") )
+ 
+ 
+ /***********************************************************************
+-- 
+2.50.1

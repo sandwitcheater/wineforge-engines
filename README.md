@@ -22,11 +22,12 @@ Every build:
 1. downloads source from the manifest's HTTPS URL;
 2. verifies its pinned SHA-256 before extraction;
 3. rejects unsafe archive paths;
-4. builds on a platform-specific GitHub-hosted runner;
-5. records the runner image, tools, configuration, source digest, and artifact
-   digest in `build-info.json`;
-6. emits an SPDX JSON SBOM and SHA-256 checksum;
-7. uploads GitHub artifact attestations for both the runtime and SBOM.
+4. verifies and applies the manifest's version-scoped source patches;
+5. builds on a platform-specific GitHub-hosted runner;
+6. records the runner image, tools, configuration, source and patch digests,
+   and artifact digest in `build-info.json`;
+7. emits an SPDX JSON SBOM and SHA-256 checksum;
+8. uploads GitHub artifact attestations for both the runtime and SBOM.
 
 Each artifact also includes a `*.runtime.json` manifest for Wineforge. The
 manifest contains the archive digest, target platform, translation mode and the

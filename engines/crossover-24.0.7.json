@@ -15,11 +15,17 @@
   },
   "build": {
     "source_subdirectory": "sources/wine",
-    "targets": ["linux-x86_64", "macos-x86_64"]
+    "targets": ["linux-x86_64", "macos-x86_64"],
+    "patches": [
+      {
+        "path": "patches/24.0.7/0001-ntdll-separate-syscall-return-entry.patch",
+        "sha256": "4e8b090705932af77e083fbccfdb06ab554dea970daf4714efde5b5a27d936b8",
+        "provenance": "Minimal backport derived by comparing the SHA-256-pinned official CrossOver 24.0.7 and 25.1.1 source archives."
+      }
+    ]
   },
   "redistribution": {
     "status": "review_required",
     "reason": "Component-level licence and corresponding-source obligations must be reviewed before public binary release."
   }
 }
-
