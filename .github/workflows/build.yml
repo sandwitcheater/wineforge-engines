@@ -61,10 +61,10 @@ jobs:
       - name: Install macOS build dependencies
         if: runner.os == 'macOS'
         run: |
-          xcrun --find llvm-ar
-          xcrun --find llvm-ranlib
           brew update-reset
-          brew install bison freetype gnutls jq mingw-w64 pkg-config
+          brew install bison freetype gnutls jq llvm mingw-w64 pkg-config
+          test -x "$(brew --prefix llvm)/bin/llvm-ar"
+          test -x "$(brew --prefix llvm)/bin/llvm-ranlib"
           brew list --versions > dependency-versions.txt
 
       - name: Build and package runtime
