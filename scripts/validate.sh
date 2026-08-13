@@ -19,13 +19,13 @@ done < <(find "$repo_dir/scripts" -type f -name '*.sh' -print | LC_ALL=C sort)
 preparation_test=$(mktemp -d "${TMPDIR:-/tmp}/wineforge-prepare-test.XXXXXX")
 cleanup() { rm -rf -- "$preparation_test"; }
 trap cleanup EXIT HUP INT TERM
-mkdir -p -- "$preparation_test/include"
-"$repo_dir/scripts/prepare-source.sh" "$preparation_test"
-"$repo_dir/scripts/prepare-source.sh" "$preparation_test"
+mkdir -- "$preparation_test/wine"
+"$repo_dir/scripts/prepare-source.sh" "$preparation_test/wine"
+"$repo_dir/scripts/prepare-source.sh" "$preparation_test/wine"
 if ! grep -q '^#define WINDEBUG_WHAT_HAPPENED_MESSAGE' \
-  "$preparation_test/include/distversion.h" || \
+  "$preparation_test/distversion.h" || \
   ! grep -q '^#define WINDEBUG_USER_SUGGESTION_MESSAGE' \
-  "$preparation_test/include/distversion.h"; then
+  "$preparation_test/distversion.h"; then
   printf 'source preparation did not create the required definitions\n' >&2
   failures=$((failures + 1))
 fi
