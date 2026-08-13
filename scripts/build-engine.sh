@@ -177,4 +177,7 @@ jq -n \
   cd "$dist_dir"
   printf '%s  %s\n' "$artifact_sha256" "$artifact_name" > "$artifact_name.sha256"
 )
+python3 "$repo_dir/scripts/generate-reference.py" \
+  "$stage_dir" "$artifact" \
+  "$dist_dir/wineforge-engine-$version-$target.reference.json"
 printf 'created %s\n' "$artifact"
