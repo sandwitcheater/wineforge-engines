@@ -100,8 +100,7 @@ fi
 (
   cd "$build_dir"
   "$source_dir/configure" "${configure_args[@]}"
-  make -j "${WINEFORGE_JOBS:-2}"
-  make install DESTDIR="$stage_dir"
+  make -j "${WINEFORGE_JOBS:-2}" install DESTDIR="$stage_dir"
 )
 
 wine_binary=$(find "$stage_dir" -type f \( -name wine -o -name wine64 \) -perm -111 -print | LC_ALL=C sort | head -1)
