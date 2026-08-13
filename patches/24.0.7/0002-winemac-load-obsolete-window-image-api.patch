@@ -1,0 +1,46 @@
+From: Wineforge engine builders
+Subject: [PATCH] winemac: Load the obsolete window image API dynamically
+
+The macOS 15 SDK marks CGWindowListCreateImageFromArray unavailable. CrossOver
+25.1.1 loads it dynamically for compatibility; backport that focused change.
+
+---
+ dlls/winemac.drv/cocoa_window.m | 16 +++++++++++++---
+ 1 file changed, 13 insertions(+), 3 deletions(-)
+
+diff --git a/dlls/winemac.drv/cocoa_window.m b/dlls/winemac.drv/cocoa_window.m
+index 1111111..2222222 100644
+--- a/dlls/winemac.drv/cocoa_window.m
++++ b/dlls/winemac.drv/cocoa_window.m
+@@ -25,6 +25,7 @@
+ #import <CoreVideo/CoreVideo.h>
+ #import <Metal/Metal.h>
+ #import <QuartzCore/QuartzCore.h>
++#include <dlfcn.h>
+ 
+ #import "cocoa_window.h"
+ 
+@@ -2340,9 +2341,18 @@
+             if (!window)
+                 return;
+         }
++        static CGImageRef __nullable (*pCGWindowListCreateImageFromArray)(CGRect, CFArrayRef, CGWindowImageOption);
++        static dispatch_once_t once;
++        dispatch_once(&once, ^{
++            void *h = dlopen("/System/Library/Frameworks/CoreGraphics.framework/CoreGraphics", RTLD_LAZY | RTLD_LOCAL);
++            if (h)
++                pCGWindowListCreateImageFromArray = dlsym(h, "CGWindowListCreateImageFromArray");
++        });
++        if (!pCGWindowListCreateImageFromArray)
++            return;
+ 
+-        const void* windowID = (const void*)(CGWindowID)window.windowNumber;
++        const void* windowID = (const void*)(uintptr_t)(CGWindowID)window.windowNumber;
+         CFArrayRef windowIDs = CFArrayCreate(NULL, &windowID, 1, NULL);
+-        CGImageRef windowImage = CGWindowListCreateImageFromArray(CGRectNull, windowIDs, kCGWindowImageBoundsIgnoreFraming);
++        CGImageRef windowImage = pCGWindowListCreateImageFromArray(CGRectNull, windowIDs, kCGWindowImageBoundsIgnoreFraming);
+         CFRelease(windowIDs);
+         if (!windowImage)
+             return;
+-- 
+2.50.1
