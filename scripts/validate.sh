@@ -45,7 +45,9 @@ for manifest in "$repo_dir"/engines/crossover-*.json; do
     (all(.build.patches[];
       (.path | test("^patches/" + $version + "/[a-z0-9][a-z0-9.-]+\\.patch$")) and
       (.sha256 | test("^[a-f0-9]{64}$")) and
-      (.provenance | type == "string" and length > 0))) and
+      (.provenance | type == "string" and length > 0) and
+      (.targets | type == "array" and length > 0) and
+      ((.targets - ["linux-x86_64", "macos-x86_64"]) | length == 0))) and
     (.redistribution.status as $status |
       (["review_required", "approved", "prohibited"] | index($status)) != null)
   ' "$manifest" >/dev/null; then

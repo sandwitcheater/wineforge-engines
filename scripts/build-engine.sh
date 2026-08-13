@@ -83,7 +83,8 @@ while IFS= read -r patch_spec; do
     --arg path "$patch_path" \
     --arg sha256 "$actual_patch_sha256" \
     '. + [{path: $path, sha256: $sha256}]' <<<"$patch_evidence")
-done < <(jq -c '.build.patches[]' "$manifest")
+done < <(jq -c --arg target "$target" \
+  '.build.patches[] | select(.targets | index($target))' "$manifest")
 
 if [[ "$target" == macos-x86_64 ]]; then
   export CC='clang -arch x86_64'

@@ -22,7 +22,7 @@ Every build:
 1. downloads source from the manifest's HTTPS URL;
 2. verifies its pinned SHA-256 before extraction;
 3. rejects unsafe archive paths;
-4. verifies and applies the manifest's version-scoped source patches;
+4. verifies and applies the manifest's version- and target-scoped source patches;
 5. builds Wine's install dependency graph on a platform-specific GitHub-hosted
    runner, excluding test-only executables from runtime builds;
 6. records the runner image, tools, configuration, source and patch digests,
