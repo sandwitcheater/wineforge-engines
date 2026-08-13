@@ -33,6 +33,8 @@ configure_args=(
   --enable-win64
   "--host=$expected_host"
 )
+make_command=make
+make_arguments=(-j "${WINEFORGE_JOBS:-2}")
 if [[ "$target" == macos-x86_64 ]]; then
   configure_args+=(--without-alsa --without-cups --without-dbus --without-oss --without-pulse --without-sane --without-wayland --without-x)
 fi
@@ -107,15 +109,26 @@ if [[ "$target" == macos-x86_64 ]]; then
     export RANLIB="$llvm_prefix/bin/llvm-ranlib"
     export PATH="$llvm_prefix/bin:$(brew --prefix bison)/bin:$PATH"
     export PKG_CONFIG_PATH="$dependency_prefix/lib/pkgconfig:$dependency_prefix/share/pkgconfig:${PKG_CONFIG_PATH:-}"
-    export CPPFLAGS="-I$dependency_prefix/include ${CPPFLAGS:-}"
-    export LDFLAGS="-L$dependency_prefix/lib ${LDFLAGS:-}"
+    if [[ -z ${WINEFORGE_DEPS_PREFIX:-} ]]; then
+      export CPPFLAGS="-I$dependency_prefix/include ${CPPFLAGS:-}"
+      export LDFLAGS="-L$dependency_prefix/lib ${LDFLAGS:-}"
+    else
+      export DYLD_LIBRARY_PATH="$dependency_prefix/lib:${DYLD_LIBRARY_PATH:-}"
+      make_command=$(brew --prefix make)/bin/gmake
+      make_shell=$(brew --prefix bash)/bin/bash
+      [[ -x "$make_command" && -x "$make_shell" ]] || {
+        printf 'Homebrew make and bash are required with WINEFORGE_DEPS_PREFIX\n' >&2
+        exit 69
+      }
+      make_arguments+=("SHELL=$make_shell")
+    fi
   fi
 fi
 
 (
   cd "$build_dir"
   "$source_dir/configure" "${configure_args[@]}"
-  make -j "${WINEFORGE_JOBS:-2}" install DESTDIR="$stage_dir"
+  "$make_command" "${make_arguments[@]}" install DESTDIR="$stage_dir"
 )
 
 wine_binary=$(find "$stage_dir" -type f \( -name wine -o -name wine64 \) -perm -111 -print | LC_ALL=C sort | head -1)
@@ -145,7 +158,7 @@ jq -n \
   --arg configure "$(printf '%q ' "${configure_args[@]}")" \
   --argjson patches "$patch_evidence" \
   --arg cc "$($compiler_command --version 2>/dev/null | head -1 || true)" \
-  --arg make "$(make --version | head -1)" \
+  --arg make "$($make_command --version | head -1)" \
   '{schema_version: 1, version: $version, target: $target,
     source: {url: $source_url, sha256: $source_sha256},
     builder: {runner_image: $runner_image, compiler: $cc, make: $make},
